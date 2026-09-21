@@ -217,15 +217,5 @@ return $input.all().filter(item =>
 
 ---
 
-## Future Enhancements
-
-- [ ] Add email notification on top candidates
-- [ ] Implement resume scoring (0-100 scale)
-- [ ] Store evaluation history in database
-- [ ] Support multiple job descriptions (parallel pipelines)
-- [ ] Add webhook trigger for manual evaluation runs
-
----
-
 ## License
 Portfolio project. Free to adapt and modify.
