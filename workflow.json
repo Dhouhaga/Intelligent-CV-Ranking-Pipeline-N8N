@@ -1,0 +1,577 @@
+{
+  "name": "n8n-project",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "YOUR_CV_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "cv-manager",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_CV_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -272
+      ],
+      "id": "427b1a56-23ed-48e4-a055-6da47ac41abd",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "{\n  \"q\": \"mimeType='application/pdf' and 'YOUR_CV_FOLDER_ID' in parents\",\n  \"fields\": \"files(id,name,mimeType,parents),nextPageToken\",\n  \"includeItemsFromAllDrives\": \"true\",\n  \"supportsAllDrives\": \"true\",\n  \"pageSize\": \"10\"\n}\n",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        272,
+        0
+      ],
+      "id": "a63bc1e4-f711-4b02-bd8d-f0577977a516",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json[\"id\"] }}?alt=media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        720,
+        0
+      ],
+      "id": "2c17e5b9-b351-4595-9d54-c1ab63b22d51",
+      "name": "HTTP Request1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "9861b23c-a24f-4339-a9b0-9ece15fdaf90",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert resume evaluator. You will be given a job post description and multiple candidates' resumes as JSON. \n\nThe job post is provided as plain text input:\n{{ JSON.stringify($json.textContent) }}\n\nEach candidate has:\n- fileName: the PDF file name\n- id: the Google Drive file ID\n- pdfText: the full text of their resume\n\nCompare all candidates based on overall quality, clarity, relevance to the job post, and achievements. \nReturn only a JSON array with three objects for the best three candidates. \nEach object must have exactly two fields:\n- fileName\n- driveLink using the id in input of the candidate file (it's next to the fileName and before the pdfText). Use this exact format: https://drive.google.com/file/d/{id}/view\n\nDo not include any explanation, commentary, or formatting—only return the JSON array.\n\nHere is the input:\n\n{{ JSON.stringify($json.agentInput) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        -128
+      ],
+      "id": "0f55e14c-ed95-429f-b48b-d84e417eeaa4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-r1-distill-llama-70b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        80
+      ],
+      "id": "9722ca01-d8aa-4d1f-9866-deae726aa83e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_OPENROUTER_API_KEY",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n    item.binary.originalFileName = {\n        fileName: item.json.name,\n        data: null\n    };\n    item.binary.originalFileId = {\n        fileName: item.json.id,\n        data: null\n    };\n    return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        0
+      ],
+      "id": "b28e4922-87a6-4b30-b38c-e0896845e17a",
+      "name": "save to binary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentInput = $input.all().map(item => ({\n  fileName: item.binary.originalFileName?.fileName || 'unknown.pdf',\n  id: item.binary.originalFileId?.fileName || 'missing_id',\n  pdfText: item.json.text || ''\n}));\n\nreturn [\n  {\n    json: {\n      agentInput\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "07b799df-c66d-4f92-b530-1dfcc7de51fc",
+      "name": "clean data"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json[\"files\"].map(file => {\n  return { json: file };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "6af79a49-53e8-437f-ab4d-14c8b050da6c",
+      "name": "map list"
+    },
+    {
+      "parameters": {
+        "name": "best_candidates_links.txt",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_RESULTS_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "cv-manager-results",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_RESULTS_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3440,
+        -144
+      ],
+      "id": "d1d25c32-d6e8-4e05-9a06-0cb67d0936a0",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw output string\nconst raw = $json.output || \"\";\n\n// Remove markdown fences and trim\nconst cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// Parse JSON safely\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  parsed = [];\n}\n\n// Ensure parsed is an array\nif (!Array.isArray(parsed)) {\n  parsed = [parsed];\n}\n\n// Map each candidate to its driveLink\nreturn parsed.map(candidate => ({\n  json: {\n    fileName: candidate.fileName || \"\",\n    driveLink: candidate.driveLink || \"\"\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -128
+      ],
+      "id": "026ef0bc-32d0-4dc5-ad70-180965174064",
+      "name": "CV link parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all incoming items\nconst items = $input.all();\n\n// Determine the candidate list:\n// - If a single item contains an array in its json, unwrap it.\n// - Otherwise, treat each incoming item as one candidate.\nlet candidates;\n\nif (\n  items.length === 1 &&\n  Array.isArray(items[0].json)\n) {\n  // Case: the upstream produced one item whose json is an array\n  candidates = items[0].json;\n} else if (\n  items.length === 1 &&\n  typeof items[0].json === 'string'\n) {\n  // Case: a raw JSON string was passed\n  try {\n    const parsed = JSON.parse(items[0].json);\n    candidates = Array.isArray(parsed) ? parsed : [parsed];\n  } catch {\n    candidates = [ { fileName: 'unknown', driveLink: items[0].json } ];\n  }\n} else {\n  // Case: multiple items, each with a candidate object\n  candidates = items.map(i => i.json);\n}\n\n// Build the text content\nlet content = \"Best Candidates Resumes Links:\\n\\n\";\nfor (const c of candidates) {\n  const fileName = c.fileName || \"unknown\";\n  const driveLink = c.driveLink || \"\";\n  content += `${fileName}: ${driveLink}\\n\\n`;\n}\n\n// Output as a single TXT file (binary)\nreturn [\n  {\n    json: {},\n    binary: {\n      data: {\n        data: Buffer.from(content).toString('base64'),\n        fileName: 'best_candidates_links.txt',\n        mimeType: 'text/plain'\n      }\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        -128
+      ],
+      "id": "ce8c8258-ebcc-4c71-ba04-8ca75766efc4",
+      "name": "result builder"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_JOB_DESCRIPTION_FILE_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        -272
+      ],
+      "id": "cdf5911a-7995-4bed-8ada-4700b8cbdbb3",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const buffer = items[0].binary.data.data;\nconst text = Buffer.from(buffer, 'base64').toString('utf8');\nreturn [{ json: { textContent: text } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -272
+      ],
+      "id": "c35612d8-8bd1-4917-a19a-6ea322bba38d",
+      "name": "job description parser"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1520,
+        -128
+      ],
+      "id": "b8c6e7f3-6c3f-4e8d-b4f2-8d3c3e3c3e3c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {
+          "deletePermanently": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2848,
+        -336
+      ],
+      "id": "56a84780-75a9-4e92-81a6-e7bf42e93ef3",
+      "name": "Delete a file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "best_candidates_links.txt",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "YOUR_RESULTS_FOLDER_ID",
+            "mode": "list",
+            "cachedResultName": "cv-manager-results",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_RESULTS_FOLDER_ID"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2656,
+        -336
+      ],
+      "id": "bd8444cc-6298-4ca3-bb97-a98d8f81db43",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_API_KEY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3184,
+        -144
+      ],
+      "id": "ad58a1a1-8f08-42fe-b8ec-51e9b72a7a84",
+      "name": "Merge1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "map list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "save to binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "clean data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save to binary": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "clean data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "map list": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "CV link parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        []
+      ]
+    },
+    "CV link parser": {
+      "main": [
+        [
+          {
+            "node": "result builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "result builder": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "job description parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "job description parser": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a file": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Delete a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5ad9689f-ceca-4be9-a0c2-ed037a9de0e6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83debd3b4c7859538727dcd22540260ba0a3542b0c69b1ef852ec032e37252a2"
+  },
+  "id": "6k9NvkVcU2E1kenc",
+  "tags": []
+}
