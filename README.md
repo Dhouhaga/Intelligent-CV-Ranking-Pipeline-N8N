@@ -75,10 +75,10 @@ Cleanup (remove old result file if exists)
 - Format: `[{fileName, driveLink}, ...]`
 
 **Why this approach:**
-- ✅ Structured output (JSON) ensures parseable results
-- ✅ Deterministic ranking based on job requirements
-- ✅ Free model tier keeps costs minimal
-- ✅ DeepSeek R1 provides reasoning-grade evaluation
+- Structured output (JSON) ensures parseable results
+- Deterministic ranking based on job requirements
+- Free model tier keeps costs minimal
+- DeepSeek R1 provides reasoning-grade evaluation
 
 ---
 
@@ -145,12 +145,12 @@ File:   https://drive.google.com/file/d/{FILE_ID}/view
 
 ## Key Features
 
-✅ **Continuous Monitoring** - Triggers automatically on new CV uploads  
-✅ **Scalable** - Handles 10+ CVs per run (configurable)  
-✅ **LLM-Powered** - Reasoning-based candidate ranking  
-✅ **Cloud-Native** - Leverages Google Drive as storage  
-✅ **Fault-Tolerant** - Cleanup logic prevents duplicate results  
-✅ **Production-Grade** - Error handling, data validation, structured output  
+**Continuous Monitoring** - Triggers automatically on new CV uploads  
+**Scalable** - Handles 10+ CVs per run (configurable)  
+**LLM-Powered** - Reasoning-based candidate ranking  
+**Cloud-Native** - Leverages Google Drive as storage  
+**Fault-Tolerant** - Cleanup logic prevents duplicate results  
+**Production-Grade** - Error handling, data validation, structured output  
 
 ---
 
