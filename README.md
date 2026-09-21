@@ -216,6 +216,3 @@ return $input.all().filter(item =>
 - **Scalability:** Tested with 10-50 CVs per batch
 
 ---
-
-## License
-Portfolio project. Free to adapt and modify.
