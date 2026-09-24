@@ -23,7 +23,7 @@ An n8n workflow that polls a Google Drive folder for new CVs, evaluates each can
 | Prepare | clean data (structures `{fileName, id, pdfText}`), Merge |
 | Evaluate | AI Agent + OpenRouter Chat Model (DeepSeek R1 Distill Llama 70B) |
 | Output | CV link parser, result builder, Search files and folders, Delete a file, Upload file |
-</div>div>
+</div>
 ## Setup
 
 ### Prerequisites
