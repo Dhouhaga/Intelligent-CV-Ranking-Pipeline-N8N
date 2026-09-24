@@ -14,7 +14,7 @@ An n8n workflow that polls a Google Drive folder for new CVs, evaluates each can
 
 <img width="1165" height="185" alt="image" src="https://github.com/user-attachments/assets/09dbf397-77f1-40d2-b3b4-8c8bc1b8faad" />
 
-
+<div align="center">
 | Stage | Nodes |
 |---|---|
 | Trigger | Google Drive Trigger (polls CV folder every minute) |
@@ -23,7 +23,7 @@ An n8n workflow that polls a Google Drive folder for new CVs, evaluates each can
 | Prepare | clean data (structures `{fileName, id, pdfText}`), Merge |
 | Evaluate | AI Agent + OpenRouter Chat Model (DeepSeek R1 Distill Llama 70B) |
 | Output | CV link parser, result builder, Search files and folders, Delete a file, Upload file |
-
+</div>div>
 ## Setup
 
 ### Prerequisites
