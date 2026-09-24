@@ -12,6 +12,9 @@ An n8n workflow that polls a Google Drive folder for new CVs, evaluates each can
 
 ## Nodes Overview
 
+<img width="1165" height="185" alt="image" src="https://github.com/user-attachments/assets/09dbf397-77f1-40d2-b3b4-8c8bc1b8faad" />
+
+
 | Stage | Nodes |
 |---|---|
 | Trigger | Google Drive Trigger (polls CV folder every minute) |
