@@ -14,16 +14,20 @@ An n8n workflow that polls a Google Drive folder for new CVs, evaluates each can
 
 <img width="1165" height="185" alt="image" src="https://github.com/user-attachments/assets/09dbf397-77f1-40d2-b3b4-8c8bc1b8faad" />
 
-<center>
-| Stage | Nodes |
-|---|---|
-| Trigger | Google Drive Trigger (polls CV folder every minute) |
-| Ingest | HTTP Request (list/download CVs), Download file (job description) |
-| Extract | Extract from File (PDF → text), save to binary, job description parser |
-| Prepare | clean data (structures `{fileName, id, pdfText}`), Merge |
-| Evaluate | AI Agent + OpenRouter Chat Model (DeepSeek R1 Distill Llama 70B) |
-| Output | CV link parser, result builder, Search files and folders, Delete a file, Upload file |
-</center>
+<div align="center">
+
+<table>
+  <tr><th>Stage</th><th>Nodes</th></tr>
+  <tr><td>Trigger</td><td>Google Drive Trigger (polls CV folder every minute)</td></tr>
+  <tr><td>Ingest</td><td>HTTP Request (list/download CVs), Download file (job description)</td></tr>
+  <tr><td>Extract</td><td>Extract from File (PDF → text), save to binary, job description parser</td></tr>
+  <tr><td>Prepare</td><td>clean data (structures <code>{fileName, id, pdfText}</code>), Merge</td></tr>
+  <tr><td>Evaluate</td><td>AI Agent + OpenRouter Chat Model (DeepSeek R1 Distill Llama 70B)</td></tr>
+  <tr><td>Output</td><td>CV link parser, result builder, Search files and folders, Delete a file, Upload file</td></tr>
+</table>
+
+</div>
+
 ## Setup
 
 ### Prerequisites
